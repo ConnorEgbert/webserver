@@ -73,7 +73,8 @@ def deleteRequest():
     DELETE request handler
     """
     pass
-
+// status code       print (r.status_code)
+// content            print(r.content)
 
 def getResponse(method, headers, requestbody):
     """
