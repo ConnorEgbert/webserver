@@ -41,6 +41,7 @@ def postRequest(method, headers, requestbody):
     """
     POST request handler
     """
+    r=requests.post("http://google.com", data={'number': 12525, 'type': 'issue', 'action': 'show'})
     global root
     code = "200"
     try:
@@ -66,6 +67,8 @@ def putRequest():
     """
     PUT request handler
     """
+    payload = {'username': 'bob', 'email': 'bob@bob.com'}
+    r = requests.put("http://somedomain.org/endpoint", data=payload
     pass
 
 
@@ -73,8 +76,14 @@ def deleteRequest():
     """
     DELETE request handler
     """
-    pass
+    payload = {'some':'data'}
+    headers = {'content-type': 'application/json'}
+    url = "https://www.toggl.com/api/v6/" + data_description + ".json"
+    response = requests.delete(url, data=json.dumps(payload), headers=headers,auth=HTTPBasicAuth(toggl_token, 'api_token'))
 
+    pass
+// status code       print (r.status_code)
+// content            print(r.content)
 
 def getResponse(method, headers, requestbody):
     """
