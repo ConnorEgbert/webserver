@@ -62,23 +62,37 @@ def connectRequest():
     pass
 
 
-def putRequest():
+def putRequest(method, filepath, version):
     """
     PUT request handler
     """
     payload = {'username': 'bob', 'email': 'bob@bob.com'}
-    pass
+    if method == "PUT":
+        if my_file.exists(filepath):
+            #update entity
+            code = 200
+            return version, code, phrase
+        else:
+            #create entity
+            code = 201
+            return version, code, phrase
 
 
-def deleteRequest():
+def deleteRequest(method, filepath, version):
     """
     DELETE request handler
     """
     payload = {'some':'data'}
     headers = {'content-type': 'application/json'}
     url = "https://www.toggl.com/api/v6/" + data_description + ".json"
-    # status code       print (r.status_code)
-    # content            print(r.content)
+    if method == "DELETE":
+        if my_file.exists(filepath):
+            os.remove(filepath)
+            code = 200
+            return version, code, phrase
+        else:
+            code = 204
+            return version, code, phrase
 
 def getResponse(method, headers, requestbody):
     """
