@@ -67,7 +67,6 @@ def putRequest():
     PUT request handler
     """
     payload = {'username': 'bob', 'email': 'bob@bob.com'}
-    r = requests.put("http://somedomain.org/endpoint", data=payload
     pass
 
 
@@ -78,11 +77,8 @@ def deleteRequest():
     payload = {'some':'data'}
     headers = {'content-type': 'application/json'}
     url = "https://www.toggl.com/api/v6/" + data_description + ".json"
-    response = requests.delete(url, data=json.dumps(payload), headers=headers,auth=HTTPBasicAuth(toggl_token, 'api_token'))
-
-    pass
-// status code       print (r.status_code)
-// content            print(r.content)
+    # status code       print (r.status_code)
+    # content            print(r.content)
 
 def getResponse(method, headers, requestbody):
     """
@@ -95,12 +91,16 @@ def getResponse(method, headers, requestbody):
         200, All is well
         400, Bad request
         401, Unauthorized
-        _403_, Forbidden
-        _404_, File not found
-        _411_, Length required
-        _500_, Internal server error
-        _505_ HTTP version not supported
+        403, Forbidden
+        404, File not found
+        411, Length required
+        500, Internal server error
+        505 HTTP version not supported
     """
+    if method is None and headers is None and requestbody is None:
+        code = "400"
+        with open(root + code + ".html") as f:
+            body = f.read()
     global disabled
     code = "200"
     body = ""
@@ -179,7 +179,7 @@ def parseRequest(request):
         method = headers[0].split(" ")
         method[1] = method[1][1:]
     except:
-        return
+        return(None, None, None)
     headers = getHeaders(headers[1:])  # This will change headers to a dictionary.
     return(method, headers, request[1:])
 
