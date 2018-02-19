@@ -41,7 +41,6 @@ def postRequest(method, headers, requestbody):
     """
     POST request handler
     """
-    r=requests.post("http://google.com", data={'number': 12525, 'type': 'issue', 'action': 'show'})
     global root
     code = "200"
     try:
