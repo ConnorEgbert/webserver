@@ -9,7 +9,7 @@ import json  # To read config files
 import logging  # yep this is here too.
 
 
-def getRequest(method, headers):
+def getRequest(method):
     """
     GET request handler
     Params:
@@ -21,7 +21,7 @@ def getRequest(method, headers):
     global root
     code = "200"
     if method == "":
-        method = "index.html"
+        method = "index.php"
     try:
         with open(root + method) as f:
             page = f.read()
@@ -42,6 +42,7 @@ def postRequest(method, headers, requestbody):
     POST request handler
     """
     global root
+    code = "200"
     try:
         if int(headers["Content-Length"]) != len(requestbody):
             raise KeyError
@@ -88,17 +89,22 @@ def getResponse(method, headers, requestbody):
         401, Unauthorized
         _403_, Forbidden
         _404_, File not found
-        411, Length required
+        _411_, Length required
         _500_, Internal server error
         _505_ HTTP version not supported
     """
     global disabled
+    code = "200"
+    body = ""
     if method[2] != "HTTP/1.1":
         code = "505"
         body = "HTTP version not supported"
         return "HTTP/1.1 " + code + "\r\n\r\n" + body
     if method[0] == "GET" and "GET" not in disabled:
-        code, body = getRequest(method[1])
+        if method[1][-2:] == "php":
+            code, body = getPhp(method[1])
+        else:
+            code, body = getRequest(method[1])
     elif method[0] == "POST" and "POST" not in disabled:
         pass
     elif method[0] == "PUT" and "PUT" not in disabled:
@@ -110,7 +116,7 @@ def getResponse(method, headers, requestbody):
     else:
         code = "500"
         with open(root + code + ".html") as f:
-            page = f.read()
+            body = f.read()
     return "HTTP/1.1 " + code + "\r\n\r\n" + body
 
 
@@ -133,14 +139,21 @@ def getHeaders(headerlist):
 
 def getPhp(phpfile):
     """
-    Isolates headers in un-sanitized input
+    Executes php scripts
     Params:
-        page: a file that the web server is hosting.
+        phpfile: a file that the web server is hosting.
     Return:
-        The whole file as a string
+        The php output as a string
     """
-    result = subprocess.check_output(["php", page])
-    return result
+    global root
+    code = "200"
+    try:
+        result = subprocess.check_output(["php", phpfile])
+    except:
+        code = "500"
+        with open(root + code + ".html") as f:
+            result = f.read()
+    return code, result
 
 
 def parseRequest(request):
@@ -188,7 +201,7 @@ def requestHandler(client, goodlog, badlog):
     response = getResponse(method, headers, body)
 
     client.send(response)
-    # Because HTTP is connectionless we close the connection at the end of every action
+    # Because HTTP is stateless we close the connection at the end of every action
     client.close()
 
 
