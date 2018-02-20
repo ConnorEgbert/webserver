@@ -86,7 +86,7 @@ def putRequest(method, filepath, version):
             response = "201 Created"
         with open(path, mode='w') as f:
             f.write(body)
-        return "HTTP/1.1 " = response
+        return "HTTP/1.1 " + response
 
 
 def deleteRequest(method):
