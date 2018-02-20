@@ -81,9 +81,7 @@ def putRequest(method, filepath, version):
     PUT request handler
     """
         if my_file.exists(filepath):
-            #update entity
             response = "200 OK"
-            return version, code, phrase
         else:
             response = "201 Created"
         with open(path, mode='w') as f:
@@ -95,16 +93,12 @@ def deleteRequest(method):
     """
     DELETE request handler
     """
-    if method == "DELETE":
-        if my_file.exists(method[1]):
-            os.remove(method[1])
-            code = "200"
-            phrase = "OK"
-            return method[2], code, phrase
-        else:
-            code = 204
-            phrase = "No Content"
-            return code, phrase
+    if my_file.exists(path):
+        os.remove(path)
+        code = "200 OK"
+    else:
+        code = "204 No Content"
+    return code, ""
 
 def getResponse(method, headers, requestbody):
     """
@@ -140,19 +134,19 @@ def getResponse(method, headers, requestbody):
         else:
             code, body = getRequest(method[1])
     elif method[0] == "POST" and "POST" not in disabled:
-        pass
+        code, body = postRequest(method[1], headers, requestbody)
     elif method[0] == "PUT" and "PUT" not in disabled:
-        pass
+        code, body = putRequest(method[1], headers, requestbody)
     elif method[0] == "DELETE" and "DELETE" not in disabled:
-        code, phrase = deleteRequest(method)
-        return method[-1] + code + phrase
+        code, body = deleteRequest(method)
     elif method[0] == "CONNECT" and "CONNECT" not in disabled:
-        pass
+        code, body = connectRequest(method[1], headers, requestbody)
     else:
         code = "500"
         with open(root + code + ".html") as f:
             body = f.read()
     return "HTTP/1.1 " + code + "\r\n\r\n" + body
+
 
 
 def getHeaders(headerlist):
