@@ -80,13 +80,13 @@ def putRequest(method, filepath, version):
     """
     PUT request handler
     """
-        if my_file.exists(filepath):
-            response = "200 OK"
-        else:
-            response = "201 Created"
-        with open(path, mode='w') as f:
-            f.write(body)
-        return "HTTP/1.1 " + response
+    if my_file.exists(filepath):
+        response = "200 OK"
+    else:
+        response = "201 Created"
+    with open(path, mode='w') as f:
+        f.write(body)
+    return "HTTP/1.1 " + response
 
 
 def deleteRequest(method):
