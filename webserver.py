@@ -37,15 +37,18 @@ def getRequest(method):
     return code, page
 
 
-def postRequest(method, headers, requestbody):
+def postRequest(path, headers, requestbody):
     """
     POST request handler
     """
     global root
     code = "200"
+    body=""
     try:
         if int(headers["Content-Length"]) != len(requestbody):
             raise KeyError
+        with open(path, mode = 'w') as f:
+            f.write(requestbody)
     except KeyError:
         code = "411"
         with open(root + code + ".html") as f:
@@ -55,27 +58,37 @@ def postRequest(method, headers, requestbody):
     return code, body
 
 
-def connectRequest():
+def connectRequest(target, headers, requestbody):
     """
     CONNECT request handler
     """
-    pass
+    try:
+        host, port = target.split(":")
+        port = int(port)
+        s = socket.create_connection((host, port))
+        s.sendall(requestbody)
+        response = s.recv(65535)
+        s.close()
+        return "200 OK", response
+    except:
+        with open(root + "500.html") as f:
+            response = f.read()
+        return "500 Internal Server Error", response
 
 
 def putRequest(method, filepath, version):
     """
     PUT request handler
     """
-    payload = {'username': 'bob', 'email': 'bob@bob.com'}
-    if method == "PUT":
         if my_file.exists(filepath):
             #update entity
-            code = 200
+            response = "200 OK"
             return version, code, phrase
         else:
-            #create entity
-            code = 201
-            return version, code, phrase
+            response = "201 Created"
+        with open(path, mode='w') as f:
+            f.write(body)
+        return "HTTP/1.1 " = response
 
 
 def deleteRequest(method):
