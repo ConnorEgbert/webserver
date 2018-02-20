@@ -78,21 +78,20 @@ def putRequest(method, filepath, version):
             return version, code, phrase
 
 
-def deleteRequest(method, filepath, version):
+def deleteRequest(method):
     """
     DELETE request handler
     """
-    payload = {'some':'data'}
-    headers = {'content-type': 'application/json'}
-    url = "https://www.toggl.com/api/v6/" + data_description + ".json"
     if method == "DELETE":
-        if my_file.exists(filepath):
-            os.remove(filepath)
-            code = 200
-            return version, code, phrase
+        if my_file.exists(method[1]):
+            os.remove(method[1])
+            code = "200"
+            phrase = "OK"
+            return method[2], code, phrase
         else:
             code = 204
-            return version, code, phrase
+            phrase = "No Content"
+            return code, phrase
 
 def getResponse(method, headers, requestbody):
     """
@@ -132,7 +131,8 @@ def getResponse(method, headers, requestbody):
     elif method[0] == "PUT" and "PUT" not in disabled:
         pass
     elif method[0] == "DELETE" and "DELETE" not in disabled:
-        pass
+        code, phrase = deleteRequest(method)
+        return method[-1] + code + phrase
     elif method[0] == "CONNECT" and "CONNECT" not in disabled:
         pass
     else:
