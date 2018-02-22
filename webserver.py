@@ -45,7 +45,6 @@ def postRequest(path, headers, requestbody):
     code = "200"
     body = ""
     try:
-        print(headers["Content-Length"][1:])
         if int(headers["Content-Length"][1:]) != len(requestbody):
             raise KeyError
         with open(path, mode='w') as f:
