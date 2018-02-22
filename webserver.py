@@ -45,8 +45,8 @@ def postRequest(path, headers, requestbody):
     global root
     code = "200"
     body = ""
-    if method == "":
-        method = "index.php"
+    if path == "":
+        path = "index.php"
     try:
         try:
             if int(headers["Content-Length"][1:]) != len(requestbody):
