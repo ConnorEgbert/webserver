@@ -43,11 +43,12 @@ def postRequest(path, headers, requestbody):
     """
     global root
     code = "200"
-    body=""
+    body = ""
     try:
-        if int(headers["Content-Length"]) != len(requestbody):
+        print(headers["Content-Length"][1:])
+        if int(headers["Content-Length"][1:]) != len(requestbody):
             raise KeyError
-        with open(path, mode = 'w') as f:
+        with open(path, mode='w') as f:
             f.write(requestbody)
     except KeyError:
         code = "411"
