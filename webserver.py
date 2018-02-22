@@ -7,6 +7,7 @@ import socket  # duh
 import threading  # To permit concurrent client connections
 import json  # To read config files
 import logging  # yep this is here too.
+import os
 
 
 def getRequest(method):
@@ -45,15 +46,28 @@ def postRequest(path, headers, requestbody):
     code = "200"
     body = ""
     try:
-        if int(headers["Content-Length"][1:]) != len(requestbody):
-            raise KeyError
-        with open(path, mode='w') as f:
-            f.write(requestbody)
-    except KeyError:
-        code = "411"
+        try:
+            if int(headers["Content-Length"][1:]) != len(requestbody):
+                raise KeyError
+            if path[-3:] == "php":
+                code, body = getPhp(path)
+            else:
+                with open(path, mode='w') as f:
+                    body = f.read()
+        except KeyError:
+            code = "411"
+            with open(root + code + ".html") as f:
+                body = f.read()
+            return code, body
+    except (IOError, OSError) as e:
+        if e.errno == 2:  # File not found
+            code = "404"
+        elif e.errno == 13:  # Permission denied
+            code = "403"
+        else:
+            code = "500"
         with open(root + code + ".html") as f:
             body = f.read()
-        return code, body
     # the rest of the function
     return code, body
 
@@ -121,6 +135,8 @@ def getResponse(method, headers, requestbody):
         code = "400"
         with open(root + code + ".html") as f:
             body = f.read()
+
+
     global disabled
     code = "200"
     body = ""
@@ -129,12 +145,12 @@ def getResponse(method, headers, requestbody):
         body = "HTTP version not supported"
         return "HTTP/1.1 " + code + "\r\n\r\n" + body
     if method[0] == "GET" and "GET" not in disabled:
-        if method[1][-2:] == "php":
+        if method[1][-3:] == "php":
             code, body = getPhp(method[1])
         else:
             code, body = getRequest(method[1])
     elif method[0] == "POST" and "POST" not in disabled:
-        code, body = postRequest(method[1], headers, requestbody)
+        code, body = postRequest(method[1], headers, requestbody[0])
     elif method[0] == "PUT" and "PUT" not in disabled:
         code, body = putRequest(method[1], headers, requestbody)
     elif method[0] == "DELETE" and "DELETE" not in disabled:
@@ -177,7 +193,11 @@ def getPhp(phpfile):
     global root
     code = "200"
     try:
-        result = subprocess.check_output(["php", phpfile])
+        # result = subprocess.check_output(["php", phpfile], shell=True)
+        process = subprocess.Popen(["php", phpfile], stdout=subprocess.PIPE)
+        process.wait()
+        result, err = process.communicate()
+        result = result.split('line 4')[-1]
     except:
         code = "500"
         with open(root + code + ".html") as f:
