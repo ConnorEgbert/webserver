@@ -57,6 +57,7 @@ def postRequest(path, headers, requestbody):
                 with open(path, mode='w') as f:
                     body = f.read()
         except KeyError:
+            print(headers["Content-Length"][1:], len(requestbody), requestbody)
             code = "411"
             with open(root + code + ".html") as f:
                 body = f.read()
