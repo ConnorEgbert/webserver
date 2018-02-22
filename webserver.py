@@ -49,7 +49,7 @@ def postRequest(path, headers, requestbody):
         path = "index.php"
     try:
         try:
-            if int(headers["Content-Length"][1:]) != len(requestbody):
+            if int(headers["Content-Length"][1:]) != len(requestbody) and 0 != len(requestbody):
                 raise KeyError
             if path[-3:] == "php":
                 code, body = getPhp(path)
@@ -57,7 +57,6 @@ def postRequest(path, headers, requestbody):
                 with open(path, mode='w') as f:
                     body = f.read()
         except KeyError:
-            print(headers["Content-Length"][1:], len(requestbody), requestbody)
             code = "411"
             with open(root + code + ".html") as f:
                 body = f.read()
@@ -71,6 +70,11 @@ def postRequest(path, headers, requestbody):
             code = "500"
         with open(root + code + ".html") as f:
             body = f.read()
+    except:
+        code = "500"
+        with open(root + code + ".html") as f:
+            body = f.read()
+
     # the rest of the function
     return code, body
 
