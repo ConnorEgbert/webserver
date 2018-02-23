@@ -235,13 +235,13 @@ def getPhp(phpfile, variableinput):
     """
     global root
     code = "200"
-    #variableinput = variableinput.split("&")
-    #variables = {}
-    #for i in variableinput:
-    #    x = i.split("=")
-    #    variables[x[0]] = x[1]
+    variableinput = variableinput.split("&")
+    variables = {}
+    for i in variableinput:
+        x = i.split("=")
+        variables[x[0]] = x[1]
     try:
-        process = subprocess.Popen(["php", phpfile], stdout=subprocess.PIPE, env={"DATA": variableinput})
+        process = subprocess.Popen(["php", phpfile, variableinput, variableinput, "REQUEST_METHOD=POST"], stdout=subprocess.PIPE)
         process.wait()
         result, err = process.communicate()
         result = result.split('line 4')[-1]
