@@ -24,10 +24,14 @@ def getRequest(method):
     if method == "":
         method = "index.php"
     try:
+        if method == "webserver.py":
+            raise ValueError("Cannot get this")
         with open(root + method) as f:
             page = f.read()
-    except (IOError, OSError) as e:
-        if e.errno == 2:  # File not found
+    except (IOError, OSError, ValueError) as e:
+        if type(e) == ValueError:
+            code = "403"
+        elif e.errno == 2:  # File not found
             code = "404"
         elif e.errno == 13:  # Permission denied
             code = "403"
@@ -84,49 +88,74 @@ def postRequest(path, headers, requestbody):
     return code, body
 
 
-def connectRequest(target, headers, requestbody):
+def connectproxy(source, dest):
+    while(source):
+        source.send(dest.recv(65535))
+        dest.send(source.recv(65535))
+
+
+def connectRequest(target, headers, sock):
     """
     CONNECT request handler
     """
+    code = "200"
     try:
         host, port = target.split(":")
         port = int(port)
-        s = socket.create_connection((host, port))
-        s.sendall(requestbody)
-        response = s.recv(65535)
-        s.close()
-        return "200 OK", response
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s = socket.connect((host, port))
+        threading.Thread(target=connectproxy, args=(s, sock)).start()
+        return code
     except:
         with open(root + "500.html") as f:
             response = f.read()
         return "500 Internal Server Error", response
 
 
-def putRequest(method, filepath, version):
+def putRequest(method, putbody):
     """
     PUT request handler
     """
-    if my_file.exists(filepath):
-        response = "200 OK"
-    else:
-        response = "201 Created"
-    with open(path, mode='w') as f:
-        f.write(body)
-    return "HTTP/1.1 " + response
+    global root
+    body = ""
+    try:
+        with open(method, 'w') as f:
+            f.write(root + putbody)
+            code = "200"
+    except (IOError, OSError) as e:
+        if e.errno == 2:  # File not found
+            code = "404"
+        elif e.errno == 13:  # Permission denied
+            code = "403"
+        else:
+            code = "500"
+        with open(root + code + ".html") as f:
+            body = f.read()
+    return code, body
 
 
 def deleteRequest(method):
     """
     DELETE request handler
     """
-    if my_file.exists(path):
-        os.remove(path)
-        code = "200 OK"
-    else:
-        code = "204 No Content"
-    return code, ""
+    global root
+    code = "200"
+    body = ""
+    try:
+        os.remove(root + method)
+    except (IOError, OSError) as e:
+        if e.errno == 2:  # File not found
+            code = "404"
+        elif e.errno == 13:  # Permission denied
+            code = "403"
+        else:
+            code = "500"
+        with open(root + code + ".html") as f:
+            body = f.read()
+    return code, body
 
-def getResponse(method, headers, requestbody):
+
+def getResponse(method, headers, requestbody, sock):
     """
     Generates HTTP response for a request
     Params:
@@ -150,24 +179,29 @@ def getResponse(method, headers, requestbody):
     global disabled
     code = "200"
     body = ""
-    if method[2] != "HTTP/1.1":
-        code = "505"
-        body = "HTTP version not supported"
-        return "HTTP/1.1 " + code + "\r\n\r\n" + body
-    if method[0] == "GET" and "GET" not in disabled:
-        if method[1][-3:] == "php":
-            code, body = getPhp(method[1], "")
+    try:
+        if method[2] != "HTTP/1.1":
+            code = "505"
+            body = "HTTP version not supported"
+            return "HTTP/1.1 " + code + "\r\n\r\n" + body
+        if method[0] == "GET" and "GET" not in disabled:
+            if method[1][-3:] == "php":
+                code, body = getPhp(method[1], "")
+            else:
+                code, body = getRequest(method[1])
+        elif method[0] == "POST" and "POST" not in disabled:
+            code, body = postRequest(method[1], headers, requestbody[0])
+        elif method[0] == "PUT" and "PUT" not in disabled:
+            code, body = putRequest(method[1], requestbody)
+        elif method[0] == "DELETE" and "DELETE" not in disabled:
+            code, body = deleteRequest(method[1])
+        elif method[0] == "CONNECT" and "CONNECT" not in disabled:
+            code, body = connectRequest(method[1], headers, sock)
         else:
-            code, body = getRequest(method[1])
-    elif method[0] == "POST" and "POST" not in disabled:
-        code, body = postRequest(method[1], headers, requestbody[0])
-    elif method[0] == "PUT" and "PUT" not in disabled:
-        code, body = putRequest(method[1], headers, requestbody)
-    elif method[0] == "DELETE" and "DELETE" not in disabled:
-        code, body = deleteRequest(method)
-    elif method[0] == "CONNECT" and "CONNECT" not in disabled:
-        code, body = connectRequest(method[1], headers, requestbody)
-    else:
+            code = "500"
+            with open(root + code + ".html") as f:
+                body = f.read()
+    except:
         code = "500"
         with open(root + code + ".html") as f:
             body = f.read()
@@ -201,14 +235,13 @@ def getPhp(phpfile, variableinput):
     """
     global root
     code = "200"
-    variableinput = variableinput.split("&")
-    variables = {}
-    for i in variableinput:
-        x = i.split("=")
-        variables[x[0]] = x[1]
+    #variableinput = variableinput.split("&")
+    #variables = {}
+    #for i in variableinput:
+    #    x = i.split("=")
+    #    variables[x[0]] = x[1]
     try:
-        # result = subprocess.check_output(["php", phpfile], shell=True)
-        process = subprocess.Popen(["php", phpfile], stdout=subprocess.PIPE, env=variables)
+        process = subprocess.Popen(["php", phpfile], stdout=subprocess.PIPE, env={"DATA": variableinput})
         process.wait()
         result, err = process.communicate()
         result = result.split('line 4')[-1]
@@ -219,7 +252,7 @@ def getPhp(phpfile, variableinput):
     return code, result
 
 
-def parseRequest(request):
+def parseRequest(request, badlog):
     """
     Generates HTTP response for a request
     Params:
@@ -234,6 +267,7 @@ def parseRequest(request):
         method = headers[0].split(" ")
         method[1] = method[1][1:]
     except:
+        badlog.info("Could not parse request")
         return(None, None, None)
     headers = getHeaders(headers[1:])  # This will change headers to a dictionary.
     return(method, headers, request[1:])
@@ -260,8 +294,8 @@ def requestHandler(client, goodlog, badlog):
     Return:
         None
     """
-    method, headers, body = parseRequest(client.recv(65535))
-    response = getResponse(method, headers, body)
+    method, headers, body = parseRequest(client.recv(65535), badlog)
+    response = getResponse(method, headers, body, client)
 
     client.send(response)
     # Because HTTP is stateless we close the connection at the end of every action
@@ -303,7 +337,7 @@ def main():
     try:
         conf = getConfig(sys.argv[1])
     except IndexError:
-        print("Defaulting to \"./webserver.blob\"")
+        print("Using default config: \"./webserver.blob\"")
         conf = getConfig("webserver.blob")
 
     if conf["root"][-1] != "/":
