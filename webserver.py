@@ -156,7 +156,7 @@ def getResponse(method, headers, requestbody):
         return "HTTP/1.1 " + code + "\r\n\r\n" + body
     if method[0] == "GET" and "GET" not in disabled:
         if method[1][-3:] == "php":
-            code, body = getPhp(method[1])
+            code, body = getPhp(method[1], "")
         else:
             code, body = getRequest(method[1])
     elif method[0] == "POST" and "POST" not in disabled:
