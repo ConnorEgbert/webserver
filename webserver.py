@@ -41,6 +41,11 @@ def getRequest(method):
 def postRequest(path, headers, requestbody):
     """
     POST request handler
+    Params:
+        method - String representing the type of request
+    Returns:
+        code - HTTP code as string
+        page - page the user will view, as a string
     """
     global root
     code = "200"
@@ -52,7 +57,7 @@ def postRequest(path, headers, requestbody):
             if int(headers["Content-Length"][1:]) != len(requestbody) and 0 != len(requestbody):
                 raise KeyError
             if path[-3:] == "php":
-                code, body = getPhp(path)
+                code, body = getPhp(path, requestbody)
             else:
                 with open(path, mode='w') as f:
                     body = f.read()
@@ -142,8 +147,6 @@ def getResponse(method, headers, requestbody):
         code = "400"
         with open(root + code + ".html") as f:
             body = f.read()
-
-
     global disabled
     code = "200"
     body = ""
@@ -171,7 +174,6 @@ def getResponse(method, headers, requestbody):
     return "HTTP/1.1 " + code + "\r\n\r\n" + body
 
 
-
 def getHeaders(headerlist):
     """
     Isolates headers in un-sanitized input
@@ -189,7 +191,7 @@ def getHeaders(headerlist):
     return dic
 
 
-def getPhp(phpfile):
+def getPhp(phpfile, variableinput):
     """
     Executes php scripts
     Params:
@@ -199,9 +201,14 @@ def getPhp(phpfile):
     """
     global root
     code = "200"
+    variableinput = variableinput.split("&")
+    variables = {}
+    for i in variableinput:
+        x = i.split("=")
+        variables[x[0]] = x[1]
     try:
         # result = subprocess.check_output(["php", phpfile], shell=True)
-        process = subprocess.Popen(["php", phpfile], stdout=subprocess.PIPE)
+        process = subprocess.Popen(["php", phpfile], stdout=subprocess.PIPE, env=variables)
         process.wait()
         result, err = process.communicate()
         result = result.split('line 4')[-1]
